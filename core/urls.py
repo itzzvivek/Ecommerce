@@ -5,5 +5,5 @@ app_name = 'core'
 
 urlpatterns = [
     
-    path(" ", item_list, name='item_list')
+    path("",item_list,name='item_list')
 ]
