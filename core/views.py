@@ -5,6 +5,6 @@ from .models import Item
 
 def item_list(request):
     context = {
-        'item': Item.objects.all()
+        'items': Item.objects.all()
     }
-    return render(request, "item_list.html", context)
+    return render(request, "home-page.html", context)
