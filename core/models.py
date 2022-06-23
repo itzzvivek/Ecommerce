@@ -1,9 +1,11 @@
+import imp
 from sre_parse import CATEGORIES
 from sys import flags
 from turtle import title
 from unicodedata import category
 from django.db import models
 from django.conf import settings
+from django.shortcuts import reverse
 
 # Create your models here.
 
@@ -24,9 +26,15 @@ class Item(models.Model):
     price = models.FloatField()
     category = models.CharField(choices=CATEGORIES_CHOICES, max_length=2 , default=())
     lable = models.CharField(choices=LABEL_CHOICES, max_length=1, default=())
+    slug = models.SlugField()
 
     def _str_(self):
       return self.title
+
+def get_absolute_url(self):
+    return reverse("core:product", kwargs ={
+        'slug': self.slug
+    })
 
 
 class OrderItem(models.Model):
