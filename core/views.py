@@ -41,15 +41,18 @@ def add_to_cart(request, slug):
         if order.items.filter(item_slug=item.slug).exists():
             order_item.quantity += 1
             order_item.save()
-            messages.info(request, "This item quantity was updated ") #leave 49:34
+            messages.info(request, "This item quantity was updated ") 
 
         else:
-            messages.info(request, "This was added to your cart")
             order.items.add(order_item)
+            messages.info(request, "This item was added to your cart")
+            return redirect("core:product", slug=slug)
+            
     else:
         ordered_date = timezone.now()
         order = Order.objects.create(user=request.user, ordered_date=ordered_date)
         order.item.add(order_item)
+        messages.info(request, "This item was added to your cart")
     return redirect("core:product", slug=slug)
 
 def remove_from_cart(request, slug):
@@ -69,12 +72,14 @@ def remove_from_cart(request, slug):
                     ordered = False
                 )[0]
             order.item.remove(order_item)
+            messages.info(request, "This item was removed from your cart")
+            return redirect("core:product", slug=slug)
         else:
-            #add a message saying the user dosn't have an order
+            messages.info(request, "This item was not in your cart")
             return redirect("core:product", slug=slug)
 
     else:
-        #add a message saying the user dosn't have an order
+        messages.info(request, "You do not have any active order")
         return redirect("core:product", slug=slug)
     return redirect("core:product", slug=slug)
       
