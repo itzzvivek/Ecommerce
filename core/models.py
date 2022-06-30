@@ -1,10 +1,3 @@
-import imp
-from pydoc import describe
-from sre_parse import CATEGORIES
-from statistics import quantiles
-from sys import flags
-from turtle import title
-from unicodedata import category
 from django.db import models
 from django.conf import settings
 from django.shortcuts import reverse
