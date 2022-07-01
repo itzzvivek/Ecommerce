@@ -1,3 +1,5 @@
+from tkinter import CASCADE
+from django_countries.fields import CountryField
 from django.db import models
 from django.conf import settings
 from django.shortcuts import reverse
@@ -82,3 +84,10 @@ class Order(models.Model):
         for order_item in self.item.all():
             total += order_item.get_final_price()
         return total
+
+class BillingAdress(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    street_adress = models.CharField(max_length=100)
+    apartment_address = models.CharField(max_length=100)
+    country = CountryField(multiple= True)
+    zip = models.CharField(max_length=100)
