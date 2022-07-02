@@ -1,4 +1,5 @@
 from tkinter import CASCADE
+from typing import Tuple
 from django_countries.fields import CountryField
 from django.db import models
 from django.conf import settings
@@ -75,6 +76,7 @@ class Order(models.Model):
     start_date = models.DateTimeField(auto_now=True)
     ordered_date = models.DateTimeField()
     ordered = models.BooleanField(default=False)
+    billing_address = models.ForeignKey('BillingAddress', on_delete=models.SET_NULL, blank=True, null=True )
 
     def _str_(self):
         return self.user.username
@@ -85,9 +87,12 @@ class Order(models.Model):
             total += order_item.get_final_price()
         return total
 
-class BillingAdress(models.Model):
+class BillingAddress(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    street_adress = models.CharField(max_length=100)
+    street_address = models.CharField(max_length=100)
     apartment_address = models.CharField(max_length=100)
-    country = CountryField(multiple= True)
+    country = CountryField(multiple= False)
     zip = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.user.username
