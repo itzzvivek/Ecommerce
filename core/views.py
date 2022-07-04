@@ -1,16 +1,22 @@
-from multiprocessing import context
+from lib2to3.pgen2 import token
+from locale import currency
+from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
+from django.forms import SelectDateWidget
 from django.views.generic import ListView, DetailView, View
 from django.shortcuts import redirect, render, get_object_or_404
 from django.shortcuts import redirect 
 from django.utils import timezone
 from django_countries import Countries
+from requests import request
 from .forms import CheckoutForm
 from .models import Item, OrderItem,Order, BillingAddress
-# Create your views here.
+
+import stripe
+stripe.api_key = settings.STRIP_TEST_KEY
 
 def product(request):
     context = {
@@ -34,8 +40,9 @@ class CheckoutView(View):
                 street_address = form.cleaned_data.get('street_address')
                 apartment_address = form.cleaned_data.get('apartment_address')
                 country = form.cleaned_data.get('country')
-                same_billing_address = form.cleaned_data.get('same_billing_address')
-                save_info = form.cleaned_data.get('save_info')
+                # TODO : add functionality for these fields
+                # same_billing_address = form.cleaned_data.get('same_billing_address')
+                # save_info = form.cleaned_data.get('save_info')
                 payment_option = form.cleaned_data.get('payment_option')
                 billing_address = BillingAddress (
                     user=self.request.user,
@@ -45,7 +52,9 @@ class CheckoutView(View):
                     zip=zip
                 )
                 billing_address.save()
-
+                order.billing_address = billing_address
+                order.save()
+                #TODO: add redirect to the selected payment option
                 return redirect('core:checkout')
             messages.warning(self.request, "Failed checkout")
             return redirect('core:checkout')
@@ -53,6 +62,20 @@ class CheckoutView(View):
             messages.error(self.request, "You don't have an active order")
             return redirect("core:order-summary")
         
+
+class PaymentView(View):
+    def get(self, *args, **kwargs):
+        return redirect(self, request, "payment.html")
+
+    def post(self, *areg, **kwargs):
+        order = Order.objects.get(user=self.request.user, ordered=False)
+        token = self.request.POST.get('stripToken')
+        stripe.Charge.create(
+            amount = 2000,
+           currency="usd",
+           source="token",
+           description = "change for jenny.rosen@example.com"
+        )
 
 class HomeView(ListView):
     model = Item
