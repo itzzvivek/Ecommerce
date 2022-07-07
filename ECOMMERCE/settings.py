@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+from distutils.command.config import config
 from pathlib import Path
 import os
 
@@ -28,7 +29,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+# SECRET_KEY = config('SECRET_KEY')
 # Application definition
 
 INSTALLED_APPS = [
@@ -42,7 +43,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    
+    'debug_toolbar',
     'crispy_forms',
     'django_countries',
     'core'
@@ -129,6 +130,7 @@ MEDIA_URL = '/media/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static_in_env')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static_root')
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media_root')
+VENV_PATH = os.path.dirname(BASE_DIR)
 
 
 # Default primary key field type
@@ -145,3 +147,44 @@ AUTHENTICATION_BACKENDS = [
 
 SITE_ID = 1
 LOGIN_REDIRECT_URL = '/'
+
+#crispy forms
+ 
+CRISPY_TEMPLATES_PACK = 'bootstrap4'
+
+# # DEBUG TOOLBAR SETTINGS
+
+# DEBUG_TOOLBAR_PANELS = [
+#     'debug_toolbar.panels.versions.VersionsPanel',
+#     'debug_toolbar.panels.timer.TimerPanel',
+#     'debug_toolbar.panels.settings.SettingsPanel',
+#     'debug_toolbar.panels.headers.HeadersPanel',
+#     'debug_toolbar.panels.request.RequestPanel',
+#     'debug_toolbar.panels.sql.SQLPanel',
+#     'debug_toolbar.panels.staticfiles.StaticFilesPanel',
+#     'debug_toolbar.panels.templates.TemplatesPanel',
+#     'debug_toolbar.panels.cache.CachePanel',
+#     'debug_toolbar.panels.signals.SignalsPanel',
+#     'debug_toolbar.panels.logging.LoggingPanel',
+#     'debug_toolbar.panels.redirects.RedirectsPanel',
+# ]
+
+
+# def show_toolbar(request):
+#     return True
+
+
+# DEBUG_TOOLBAR_CONFIG = {
+#     'INTERCEPT_REDIRECTS': False,
+#     'SHOW_TOOLBAR_CALLBACK': show_toolbar
+# }
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+# }
+
+# STRIPE_PUBLIC_KEY = config('STRIPE_TEST_PUBLIC_KEY')
+# STRIPE_SECRET_KEY = config('STRIPE_TEST_SECRET_KEY')

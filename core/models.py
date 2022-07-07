@@ -29,7 +29,7 @@ class Item(models.Model):
     lable = models.CharField(choices=LABEL_CHOICES, max_length=1, default=())
     slug = models.SlugField()
     description = models.TextField()
-    image = models.ImageField()
+    image = models.ImageField(blank= True, null=True)
 
     def _str_(self):
       return self.title
@@ -109,3 +109,9 @@ class Payment(models.Model):
 
     def __str__(self):
         return self.user.username
+
+class Coupon(models.Model):
+    code = models.CharField(max_length=15)
+
+    def __str__(self):
+        return self.code
