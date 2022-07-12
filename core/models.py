@@ -1,7 +1,3 @@
-from pyexpat import model
-from tkinter import CASCADE
-from turtle import Turtle
-from typing import Tuple
 from django_countries.fields import CountryField
 from django.db import models
 from django.conf import settings
@@ -81,7 +77,7 @@ class Order(models.Model):
     ordered = models.BooleanField(default=False)
     billing_address = models.ForeignKey('BillingAddress', on_delete=models.SET_NULL, blank=True, null=True )
     payment = models.ForeignKey('Payment', on_delete=models.SET_NULL, blank=True, null=True )
-
+    coupon = models.ForeignKey('Coupon', on_delete=models.SET_NULL, blank=True, null=True)
     def _str_(self):
         return self.user.username
 
