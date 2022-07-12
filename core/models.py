@@ -27,9 +27,9 @@ class Item(models.Model):
     discount_price = models.FloatField(blank=True , null=True)
     category = models.CharField(choices=CATEGORIES_CHOICES, max_length=2 , default=())
     lable = models.CharField(choices=LABEL_CHOICES, max_length=1, default=())
-    slug = models.SlugField()
-    description = models.TextField()
-    image = models.ImageField(blank= True, null=True)
+    slug = models.SlugField(default=()) 
+    description = models.TextField(default=('Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quisquam vitae nemo assumenda laborum ut hic fugiat, veniam voluptatem, perspiciatis consectetur dolorem sunt. Error voluptate eaque doloribus qui eos voluptates aut.'))
+    image = models.ImageField(blank=True, null=True)
 
     def _str_(self):
       return self.title
@@ -51,7 +51,7 @@ class Item(models.Model):
 
 
 class OrderItem(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,  default='1')
     ordered = models.BooleanField(default=False)
     items = models.ForeignKey(Item, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
@@ -74,7 +74,7 @@ class OrderItem(models.Model):
         return self.get_total_item_price()
 
 class Order(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,  default='1')
     items = models.ManyToManyField(OrderItem)
     start_date = models.DateTimeField(auto_now=True)
     ordered_date = models.DateTimeField()
@@ -92,7 +92,7 @@ class Order(models.Model):
         return total
 
 class BillingAddress(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,  default='1')
     street_address = models.CharField(max_length=100)
     apartment_address = models.CharField(max_length=100)
     country = CountryField(multiple= False)
@@ -103,7 +103,7 @@ class BillingAddress(models.Model):
 
 class Payment(models.Model):
     stripe_charge_id = models.CharField(max_length=50)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True,  default='1')
     amount = models.FloatField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
