@@ -24,7 +24,7 @@ class Item(models.Model):
     category = models.CharField(choices=CATEGORIES_CHOICES, max_length=2 , default=())
     lable = models.CharField(choices=LABEL_CHOICES, max_length=1, default=())
     slug = models.SlugField(default=()) 
-    description = models.TextField(default=('Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quisquam vitae nemo assumenda laborum ut hic fugiat, veniam voluptatem, perspiciatis consectetur dolorem sunt. Error voluptate eaque doloribus qui eos voluptates aut.'))
+    description = models.TextField()
     image = models.ImageField(blank=True, null=True)
 
     def _str_(self):
@@ -47,7 +47,7 @@ class Item(models.Model):
 
 
 class OrderItem(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,  default='1')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     ordered = models.BooleanField(default=False)
     items = models.ForeignKey(Item, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
@@ -70,7 +70,7 @@ class OrderItem(models.Model):
         return self.get_total_item_price()
 
 class Order(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,  default='1')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,)
     items = models.ManyToManyField(OrderItem)
     start_date = models.DateTimeField(auto_now=True)
     ordered_date = models.DateTimeField()
@@ -85,10 +85,11 @@ class Order(models.Model):
         total = 0
         for order_item in self.item.all():
             total += order_item.get_final_price()
+        total -= self.coupon.amount
         return total
 
 class BillingAddress(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,  default='1')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     street_address = models.CharField(max_length=100)
     apartment_address = models.CharField(max_length=100)
     country = CountryField(multiple= False)
@@ -99,7 +100,7 @@ class BillingAddress(models.Model):
 
 class Payment(models.Model):
     stripe_charge_id = models.CharField(max_length=50)
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True,  default='1')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True)
     amount = models.FloatField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
@@ -108,6 +109,7 @@ class Payment(models.Model):
 
 class Coupon(models.Model):
     code = models.CharField(max_length=15)
+    amount = models.FloatField()
 
     def __str__(self):
         return self.code
