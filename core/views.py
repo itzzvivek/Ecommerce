@@ -9,11 +9,19 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.shortcuts import redirect 
 from django.utils import timezone
 from requests import request
-from .forms import CheckoutForm, CouponForm
+from .forms import CheckoutForm, CouponForm,RefundFrom
 from .models import Coupon, Item, OrderItem,Order, BillingAddress, Payment
 
+import random
+import string
 import stripe
+
 # stripe.api_key = settings.STRIPE_TEST_KEY
+
+def create_ref_code():
+    return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
+    
+
 
 def product(request):
     context = {
@@ -83,9 +91,11 @@ class PaymentView(View):
                 'order': order,
                 'DISPLAY_COUPON_FORM': False
             }
-            return render(self.request, "payment.html", context)
+        return render(self.request, "payment.html", context)
+        
         else:
-            messages.warning(self.request, "You have not added a billing address")
+            messages.warning(
+                self.request, "You have not added a billing address")
             return redirect("core:checkout")
         
     
@@ -116,6 +126,7 @@ class PaymentView(View):
 
             order.ordered = True
             order.payment = payment
+            order.ref_code = create_ref_code()
             order.save()
 
             messages.success(self.request, "Your order was successfill !")
@@ -163,7 +174,7 @@ class PaymentView(View):
             messages.warning(self.request, "A serious error occurred .We have been notifed")
             
 
-class HomeView(ListVi0ew):
+class HomeView(ListView):
     model = Item
     paginate_by = 1
     template_name = "home.html"
@@ -302,6 +313,14 @@ def AddCouponView(View):
             except ObjectDoesNotExist:
                 messages.info(self.request,"You don't have any active item")
                 return redirect("core:checkout")
+
+class RequestRefundView(View):
+    def post(self, *args **kwarg):
+        form = RefundForm(request.POST)
+        if form.is_valid():
+            ref_code = form.cleaned_data.get('ref_code')
+            message = form.cleaned_data.get('message')
+        
 
 
 

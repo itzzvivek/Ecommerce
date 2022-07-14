@@ -29,3 +29,7 @@ class CouponForm(forms.Form):
         'arial-label':'Recipients\'s username',
         'arial-discribedby': 'basic-adon2'
     }))
+
+class RefundFrom(forms.From):
+    ref_code = forms.CharFeild()
+    message = forms.Textarea()
