@@ -1,3 +1,4 @@
+from django.forms import modelform_factory
 from django_countries.fields import CountryField
 from django.db import models
 from django.conf import settings
@@ -125,6 +126,8 @@ class Refund(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     reason = models.TextField()
     accepted = models.BooleanField(default=False)
+    email = models.EmailField()
 
     def __str__(self):
         return f"{self.pk}" 
+        

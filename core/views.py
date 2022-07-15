@@ -10,7 +10,7 @@ from django.shortcuts import redirect
 from django.utils import timezone
 from requests import request
 from .forms import CheckoutForm, CouponForm,RefundFrom
-from .models import Coupon, Item, OrderItem,Order, BillingAddress, Payment
+from .models import Coupon, Item, OrderItem,Order, BillingAddress, Payment, Refund
 
 import random
 import string
@@ -87,11 +87,11 @@ class PaymentView(View):
     def get(self, *args, **kwargs):
         order = Order.objects.get(user=self.request.user, ordered=False)
         if order.billing_address:
-             context = {
+            context = {
                 'order': order,
                 'DISPLAY_COUPON_FORM': False
             }
-        return render(self.request, "payment.html", context)
+            return render(self.request, "payment.html", context)
         
         else:
             messages.warning(
@@ -300,7 +300,7 @@ def get_coupon(request, code):
 
         
 def AddCouponView(View):
-    def post(self, *args **kwargs):
+    def post(self, *args ,**kwargs):
         form = CouponForm(self.request.POST or None )
         if form.is_valid():
             try:
@@ -315,11 +315,30 @@ def AddCouponView(View):
                 return redirect("core:checkout")
 
 class RequestRefundView(View):
-    def post(self, *args **kwarg):
-        form = RefundForm(request.POST)
+    def post(self, *args ,**kwarg):
+        form = RefundFrom(request.POST)
         if form.is_valid():
             ref_code = form.cleaned_data.get('ref_code')
             message = form.cleaned_data.get('message')
+            email = form.cleaned_data.get('email')
+
+            #edit order
+            try:
+                order = Order.objects.get(ref_code=ref_code)
+                order.refund_requested = True
+                order.save()
+            
+            #store the refund
+
+                refund = Refund()
+                refund.order = order
+                refund.reason = message
+                refund.eamil = email
+                refund.save()
+
+            except ObjectDoesNotExist:
+                message.info(self.request, "This order doesn't exist")
+                return redirect("/")
         
 
 

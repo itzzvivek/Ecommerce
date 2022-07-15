@@ -1,3 +1,4 @@
+import email
 from tkinter import Widget
 from django import forms
 from django_countries.fields import CountryField
@@ -30,6 +31,7 @@ class CouponForm(forms.Form):
         'arial-discribedby': 'basic-adon2'
     }))
 
-class RefundFrom(forms.From):
-    ref_code = forms.CharFeild()
+class RefundFrom(forms.Form):
+    ref_code = forms.CharField()
     message = forms.Textarea()
+    email = forms.EmailField()
