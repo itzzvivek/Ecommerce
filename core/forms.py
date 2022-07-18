@@ -33,5 +33,7 @@ class CouponForm(forms.Form):
 
 class RefundFrom(forms.Form):
     ref_code = forms.CharField()
-    message = forms.Textarea()
+    message = forms.CharField(widget=forms.Textarea (attrs={
+        'rows': 4
+    }))
     email = forms.EmailField()

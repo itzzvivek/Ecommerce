@@ -2,34 +2,40 @@ from re import I
 from django.contrib import admin
 from .models import Order, OrderItem, Payment, Item, Coupon
 
+def make_refund_accepted(modeladmin, request, queryset):
+    queryset.update(refund_requested=False, refund_granted=True)
+make_refund_accepted.short_description = 'Upadate orders to refund granted'
+
 class OrderAdmin(admin.ModelAdmin):
     list_display = [
         'user', 
         'ordered',
         'being_delivered', 
-        'recived', 
+        'received', 
         'refund_requested', 
         'refund_granted',
-        'billings_address',
-        'payments',
+        'billing_address',
+        'payment',
         'coupon'
         ]
     list_display_link = [
         'user',
-        'billings_address',
-        'payments',
+        'billing_address',
+        'payment',
         'coupon'
     ]
     list_filter = ['ordered',
                    'being_delivered',
                    'received',
-                   'refund_request',
+                   'refund_requested',
                    'refund_granted'
                    ]
         
     search_fields = [
         'user__username',
         'ref_code']
+
+    actions = [make_refund_accepted]
 
 admin.site.register(Order, OrderAdmin)
 admin.site.register(OrderItem)

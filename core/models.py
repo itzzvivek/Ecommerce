@@ -25,7 +25,7 @@ class Item(models.Model):
     category = models.CharField(choices=CATEGORIES_CHOICES, max_length=2 , default=())
     lable = models.CharField(choices=LABEL_CHOICES, max_length=1, default=())
     slug = models.SlugField(default=()) 
-    description = models.TextField()
+    description = models.TextField(default=False)
     image = models.ImageField(blank=True, null=True)
 
     def _str_(self):
@@ -54,7 +54,7 @@ class OrderItem(models.Model):
     quantity = models.IntegerField(default=1)
 
     def _str_(self):
-        return f"{self.quantity} of {self.item.title} "
+        return f"{self.quantity} of {self.item.title}"
 
     def get_total_item_price(self):
         return self.quantity * self.item.discount_price
@@ -72,7 +72,7 @@ class OrderItem(models.Model):
 
 class Order(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,)
-    ref_code = models.CharField(max_length=20)
+    ref_code = models.CharField(max_length=20, default=False)
     items = models.ManyToManyField(OrderItem)
     start_date = models.DateTimeField(auto_now=True)
     ordered_date = models.DateTimeField()
@@ -81,7 +81,7 @@ class Order(models.Model):
     payment = models.ForeignKey('Payment', on_delete=models.SET_NULL, blank=True, null=True )
     coupon = models.ForeignKey('Coupon', on_delete=models.SET_NULL, blank=True, null=True)
     being_delivered = models.BooleanField(default=False)
-    recived = models.BooleanField(default=False)
+    received = models.BooleanField(default=False)
     refund_requested = models.BooleanField(default=False)
     refund_granted = models.BooleanField(default=False)
 

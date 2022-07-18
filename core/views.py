@@ -299,7 +299,7 @@ def get_coupon(request, code):
         return redirect("core:checkout")
 
         
-def AddCouponView(View):
+class AddCouponView(View):
     def post(self, *args ,**kwargs):
         form = CouponForm(self.request.POST or None )
         if form.is_valid():
@@ -315,6 +315,13 @@ def AddCouponView(View):
                 return redirect("core:checkout")
 
 class RequestRefundView(View):
+    def get(self, *args, **kwargs):
+        form = RefundFrom()
+        context ={
+            'form':form
+        }
+        return render(self.request, "request_refund.html", context)
+
     def post(self, *args ,**kwarg):
         form = RefundFrom(request.POST)
         if form.is_valid():
@@ -335,10 +342,13 @@ class RequestRefundView(View):
                 refund.reason = message
                 refund.eamil = email
                 refund.save()
+                
+                messages.info(self.request, "Your request was recevied.")
+                return redirect("core:request-refund")
 
             except ObjectDoesNotExist:
                 message.info(self.request, "This order doesn't exist")
-                return redirect("/")
+                return redirect("core:request-refund")
         
 
 
