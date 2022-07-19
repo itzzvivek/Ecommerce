@@ -1,3 +1,4 @@
+from tabnanny import verbose
 from django.forms import modelform_factory
 from django_countries.fields import CountryField
 from django.db import models
@@ -18,15 +19,20 @@ LABEL_CHOICES = (
     ('D', 'danger')
 )
 
+ADDRESS_CHOICES = (
+    ('B', 'Billing'),
+    ('S', 'Shipping')
+)
+
 class Item(models.Model):
     title = models.CharField(max_length=100)
     price = models.FloatField()
     discount_price = models.FloatField(blank=True , null=True)
     category = models.CharField(choices=CATEGORIES_CHOICES, max_length=2 , default=())
-    lable = models.CharField(choices=LABEL_CHOICES, max_length=1, default=())
+    lable = models.CharField(choices=LABEL_CHOICES, max_length=1, default=False)
     slug = models.SlugField(default=()) 
     description = models.TextField(default=False)
-    image = models.ImageField(blank=True, null=True)
+    image = models.ImageField()
 
     def _str_(self):
       return self.title
@@ -71,13 +77,14 @@ class OrderItem(models.Model):
         return self.get_total_item_price()
 
 class Order(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, default=False)
     ref_code = models.CharField(max_length=20, default=False)
     items = models.ManyToManyField(OrderItem)
     start_date = models.DateTimeField(auto_now=True)
     ordered_date = models.DateTimeField()
     ordered = models.BooleanField(default=False)
-    billing_address = models.ForeignKey('BillingAddress', on_delete=models.SET_NULL, blank=True, null=True )
+    billing_address = models.ForeignKey('Address', related_name='billing_address', on_delete=models.SET_NULL, blank=True, null=True )
+    shipping_address = models.ForeignKey('Address', related_name='shipping_address', on_delete=models.SET_NULL, blank=True, null=True )
     payment = models.ForeignKey('Payment', on_delete=models.SET_NULL, blank=True, null=True )
     coupon = models.ForeignKey('Coupon', on_delete=models.SET_NULL, blank=True, null=True)
     being_delivered = models.BooleanField(default=False)
@@ -96,16 +103,21 @@ class Order(models.Model):
             total -= self.coupon.amount
         return total
 
-class BillingAddress(models.Model):
+class Address(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     street_address = models.CharField(max_length=100)
     apartment_address = models.CharField(max_length=100)
     country = CountryField(multiple= False)
     zip = models.CharField(max_length=100)
+    address_type = models.CharField(max_length=1 , choices= ADDRESS_CHOICES)
+    default = models.BooleanField(default=False)
 
     def __str__(self):
         return self.user.username
-
+    
+    class meta:
+        verbose_name_plural = "Addresses"
+        
 class Payment(models.Model):
     stripe_charge_id = models.CharField(max_length=50)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, blank=True, null=True)

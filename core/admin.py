@@ -1,6 +1,6 @@
 from re import I
 from django.contrib import admin
-from .models import Order, OrderItem, Payment, Item, Coupon
+from .models import Order, OrderItem, Payment, Item, Coupon, Address
 
 def make_refund_accepted(modeladmin, request, queryset):
     queryset.update(refund_requested=False, refund_granted=True)
@@ -14,12 +14,14 @@ class OrderAdmin(admin.ModelAdmin):
         'received', 
         'refund_requested', 
         'refund_granted',
+        'shipping_address',
         'billing_address',
         'payment',
         'coupon'
         ]
     list_display_link = [
         'user',
+        'shipping_address',
         'billing_address',
         'payment',
         'coupon'
@@ -37,8 +39,23 @@ class OrderAdmin(admin.ModelAdmin):
 
     actions = [make_refund_accepted]
 
+class AddressAdmin(admin.ModelAdmin):
+    list_display = [
+        'user',
+        'street_address',
+        'apartment_address',
+        'country',
+        'zip',
+        'address_type',
+        'default'
+    ]
+    list_filter = ['default', 'address_type', 'country']
+    search_fields = ['user', 'street_address', 'apartment_address', 'zip']
+
 admin.site.register(Order, OrderAdmin)
 admin.site.register(OrderItem)
 admin.site.register(Item)
 admin.site.register(Payment)
 admin.site.register(Coupon)
+admin.site.register(Address, AddressAdmin)
+
