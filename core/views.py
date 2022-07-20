@@ -1,5 +1,3 @@
-from curses import use_default_colors
-from email.policy import default
 from pickle import TRUE
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -11,14 +9,15 @@ from django.shortcuts import redirect, render, get_object_or_404
 from django.shortcuts import redirect 
 from django.utils import timezone
 from requests import request
-from .forms import CheckoutForm, CouponForm,RefundFrom
-from .models import Coupon, Item, OrderItem,Order, Address, Payment, Refund
+from django.conf import settings
+from .forms import CheckoutForm, CouponForm,RefundFrom,PaymentForm
+from .models import Coupon, Item, OrderItem,Order, Address, Payment, Refund, UserProfile, userprofile_receiver
 
 import random
 import string
 import stripe
 
-# stripe.api_key = settings.STRIPE_TEST_KEY
+stripe.api_key = settings.STRIPE_TEST_KEY
 
 def create_ref_code():
     return ''.join(random.choices(string.ascii_lowercase + string.digits, k=20))
@@ -30,6 +29,13 @@ def product(request):
         'items': Item.objects.all()
     }
     return render(request, "products.html", context)
+
+def is_valid_form(values):
+    valid = True
+    for field in values:
+        if field =='':
+            valid = False
+    return valid
 
 class CheckoutView(View):
     def get(self, *args, **kwargs):
@@ -81,27 +87,96 @@ class CheckoutView(View):
                 )
                 if address_qs.exists():
                     shipping_address = address_qs[0]
+                    order.shipping_address = shipping_address
+                    order.save()
+
                 else:
                     messages.info(self.request, "No default shipping address available")
                     return redirect("core:checkout")
             else:
                 print("User is entering a new shipping address")
-                shipping_address = form.cleaned_data.get('street_address')
-                shipping_address2 = form.cleaned_data.get('shipping_address')
-                country = form.cleaned_data.get('country')
+                shipping_address1 = form.cleaned_data.get('shipping_address1')
+                shipping_address2 = form.cleaned_data.get('shipping_address2')
+                shipping_country = form.cleaned_data.get('country')
                 shipping_zip = form.cleaned_data.get('zip')
-                payment_option = form.cleaned_data.get('payment_option')
-                shipping_address = Address (
-                    user=self.request.user,
-                    shipping_address=shipping_address,
-                    shipping_address = shipping_address2,
-                    country = country,
-                    shipping_zip=shipping_zip,
-                    address_type = 'S'
+                
+                if is_valid_form([shipping_address1, shipping_country, shipping_zip]):
+                    shipping_address = Address (
+                        user=self.request.user,
+                        street_address=shipping_address1,
+                        shipping_address = shipping_address2,
+                        country = shipping_country,
+                        zip=shipping_zip,
+                        address_type = 'S'
+                    )
+                    shipping_address.save()
+
+                    order.shipping_address = shipping_address
+                    order.save()
+
+                    set_default_shipping = form.cleaned_data.get('set_default_shipping')
+                    if set_default_shipping:
+                        shipping_address.default = True
+                        shipping_address.save()
+                else:
+                    messages.info(self.request, "Please fill in the required shipping address fields")
+
+            #Default Billing Address
+            
+                use_default_billing = form.cleaned_data.get('use_default_billing')
+                same_billing_address = form.cleaned_data.get('same_billing_address')
+                
+                if same_billing_address :
+                    billing_address = shipping_address
+                    billing_address.pk =None
+                    billing_address.save()
+                    billing_address.address_type = 'B'
+                    billing_address.save()
+                    order.billing_address = billing_address
+                    order.save()
+
+                if use_default_billing:
+                    print("Using the default billing address")
+                    address_qs = Address.objects.filter(
+                    user = self.request.user,
+                    address_type='B',
+                    default=True
                 )
-                shipping_address.save()
-            order.shipping_address = shipping_address
-            order.save()
+                    if address_qs.exists():
+                        billing_address = address_qs[0]
+                        order.billing_address = billing_address
+                        order.save()
+                    else:
+                        messages.info(self.request, "No default billing address available")
+                        return redirect("core:checkout")
+                else:
+                    print("User is entering a new billing address")
+                    billing_address1 = form.cleaned_data.get('billing_address1')
+                    billing_address2 = form.cleaned_data.get('billing_address2')
+                    billing_country = form.cleaned_data.get('country')
+                    billing_zip = form.cleaned_data.get('zip')
+                
+                if is_valid_form([billing_address1, billing_country, billing_zip]):
+                    billing_address = Address (
+                        user=self.request.user,
+                        street_address=billing_address1,
+                        billing_address = billing_address2,
+                        country = billing_country,
+                        zip=billing_zip,
+                        address_type = 'B'
+                    )
+                    shipping_address.save()
+
+                    order.billing_address = billing_address
+                    order.save()
+
+                    set_default_billing= form.cleaned_data.get('set_default_billing')
+                    if set_default_billing:
+                        billing_address.default = True
+                        billing_address.save()
+                else:
+                    messages.info(self.request, "Please fill in the required billing address fields")
+
             payment_option = form.cleaned_data.get('payment_option')
 
             if payment_option == 'S':
@@ -122,8 +197,23 @@ class PaymentView(View):
         if order.billing_address:
             context = {
                 'order': order,
-                'DISPLAY_COUPON_FORM': False
+                'DISPLAY_COUPON_FORM': False,
+                'STRIPE_PUBLIC_KEY': settings.STRIPE_PUBLIC_KEY
             }
+            userprofile = self.request.user.userprofile
+            if userprofile.one_click_purchesing:
+                #fatch the user card list
+                cards = stripe.Customer.list_source(
+                    userprofile.stripe_customer_id,
+                    limit=3,
+                    object='card'
+                )
+                card_list = cards['data']
+                if len(card_list) >0:
+                    #update the context with the default card
+                    context.update({
+                        'card': card_list[0]
+                    })
             return render(self.request, "payment.html", context)
         
         else:
@@ -134,15 +224,44 @@ class PaymentView(View):
     
     def post(self, *areg, **kwargs):
         order = Order.objects.get(user=self.request.user, ordered=False)
-        token = self.request.POST.get('stripToken')
-        amount = int(order.get_total()* 100)
+        form = PaymentForm(self.request.POST)
+        userprofile = UserProfile.objects.get(user=self.request.user)
+        if form.is_valid():
+            token = form.cleaned_data.get('stripeToken')
+            save = form.cleaned_data.get('save')
+            use_default = form.cleaned_data.get('use_default')
+
+            if save:
+                if userprofile.string_customer_id != ''and userprofile.stripe_customer_id is not None:
+                    customer = stripe.Customer.retrive(
+                        userprofile.stripe_customer_id)
+                    customer.source.create(source=token)
+
+                else:
+                    customer = stripe.Customer.create(
+                        email=self.request.user.email)
+                    customer.source.create(source=token)
+                    userprofile.stripe_customer_id = customer['id']
+                    userprofile.one.click_purchasing = True
+                    userprofile.save()
+        
+        amount = int(order.get_total() * 100)
 
         try:
-            charge = stripe.Charge.create(
-            amount=amount,
-            currency="usd",
-            source= token,
-        )
+            if use_default or save:
+                    charge = stripe.Charge.create(
+                    amount=amount,
+                    currency="usd",
+                    source= token,
+                )
+            else:
+                #charge once off on the token
+                charge = stripe.Charge.create(
+                amount = amount,
+                currency= "usd",
+                source = token
+                )
+
             #create the payment
             payment = Payment()
             payment.strip_charge_id = charge['id']
